@@ -37,3 +37,8 @@ The command to run pytest is as follow:
 cd app
 pytest -v -s
 ```
+# Additional information
+## Back end Oauth2
+This is the section to work on backend Oauth2 implementation at [Oauth2_backend.md](./Oauth2_backend.md)
+## Client Oauth2
+This is the sectio to work on front end Oauth2 flows authentication[Oauth2_client.md](./Oauth2_client.md)
