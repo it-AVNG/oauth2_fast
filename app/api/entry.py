@@ -13,8 +13,6 @@ from app.api.schemas import User
 get_log_config()
 
 app = FastAPI()
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
 
 @app.get("/")
 def health_check():
@@ -25,10 +23,6 @@ def health_check():
 
     message()
     return {'Hello': 'world'}
-
-# @app.get("/items/")
-# async def read_items(token: Annotated[str, Depends(oauth2_scheme)]):
-#     return {"token": token}
 
 @app.get("/users/me")
 async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]):
