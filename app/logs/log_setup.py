@@ -17,8 +17,9 @@ def log(func):
     def decorator_log(*args, **kwargs):
         module_logger = logging.getLogger(f'app.{func.__name__}')
         module_logger.info(f'begin {func.__name__}')
-        func(*args,**kwargs)
+        result = func(*args,**kwargs)
         module_logger.info(f'finished {func.__name__}')
+        return result
     return decorator_log
 
 
