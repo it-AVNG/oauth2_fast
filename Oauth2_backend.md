@@ -57,6 +57,10 @@ It will go and look in the request for that `Authorization` header, check if the
 If it doesn't see an Authorization header, or the value doesn't have a Bearer token, it will respond with a 401 status code error (`UNAUTHORIZED`) directly.
 
 # Get current User
-n the previous section the security system (which is based on the dependency injection system) was giving the *path operation function* a `token` as a `str`.
+In the previous section, the security system (which is based on the dependency injection system) was giving the *path operation function* a `token` as a `str`.
+>[`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated) Add metadata `x` to a given type `T` by using the annotation `Annotated[T, x]`. Metadata added using `Annotated` can be used by static analysis tools or at runtime. At runtime, the metadata is stored in a `__metadata__` attribute.
+If a library or tool encounters an annotation `Annotated[T, x]` and has no special logic for the metadata, it should ignore the metadata and simply treat the annotation as `T`.
 
-`Annotated`
+But that is still not that useful. Let's make it give us the current user.
+
+## Create a user model
