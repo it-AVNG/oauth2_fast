@@ -64,3 +64,93 @@ If a library or tool encounters an annotation `Annotated[T, x]` and has no speci
 But that is still not that useful. Let's make it give us the current user.
 
 ## Create a user model
+First, let's create a Pydantic user model. in `schemas.py`
+
+```python
+from pydantic import BaseModel
+
+class User(BaseModel):
+    username: str
+    email: str | None = None
+    full_name: str | None = None
+    disabled: bool | None = None
+```
+
+## Create a Service
+Then we create services to use in our application. Let's call it `service.py`
+
+Let's create a dependency `get_current_user`.
+
+Remember that dependencies can have sub-dependencies?
+
+`get_current_user` will have a dependency with the same `oauth2_scheme` we created before.
+
+The same as we were doing before in the path operation directly, our new dependency `get_current_user` will receive a token as a str from the sub-dependency `oauth2_scheme`:
+
+```python
+from schemas import User
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
+from typing import Annotated
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    '''getuser via decode token'''
+    return user
+
+```
+
+`get_current_user` will use a (fake) utility function we created, that takes a token as a `str` and returns our Pydantic `User` model:
+
+```python
+
+def fake_decode_token(token):
+    return User(
+        username=token + "fakedecoded", email="john@example.com", full_name="John Doe"
+    )
+
+def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    '''getuser via decode token'''
+    user = fake_decode_token(token)
+    return user
+
+```
+
+So now we can use the same Depends with our `get_current_user` in the *path* operation in `entry.py`:
+
+```python
+import sys
+import os
+from typing import Annotated
+from fastapi import Depends, FastAPI
+from service import get_current_user
+from schemas import User
+
+sys.path.append(f'{os.getcwd()}')
+from app.logs.log_setup import get_log_config,log
+
+
+get_log_config()
+
+app = FastAPI()
+
+@app.get("/")
+def health_check():
+    """health check"""
+    @log
+    def message():
+        print('message')
+
+    message()
+    return {'Hello': 'world'}
+
+@app.get("/users/me")
+async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]):
+    return current_user
+```
+Notice that we declare the type of current_user as the Pydantic model `User`.
+This will help us inside of the function with all the completion and type checks.
+
+We just need to add a path operation for the user/client to actually send the username and password.
+
