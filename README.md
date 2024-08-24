@@ -34,5 +34,6 @@ fastapi dev api/entry.py
 All the tests are written in `tests` directory; to run the tests use [`pytest`](https://docs.pytest.org/en/stable/).
 The command to run pytest is as follow:
 ```shell
+cd app
 pytest -v -s
 ```
