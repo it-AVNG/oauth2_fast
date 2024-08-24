@@ -1,0 +1,25 @@
+version: 1
+formatters:
+  simple:
+    format: '{asctime}s {name}:{module}:{funcName} {levelname} - {message}'
+    style: '{'
+    datefmt : '%Y-%m-%d %H:%M:%S'
+handlers:
+  ch:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: simple
+    stream: ext://sys.stdout
+  fh:
+    class: logging.handlers.RotatingFileHandler
+    mode: a
+    level: DEBUG
+    formatter: simple
+    filename: logs/app.log
+    maxBytes: 2000
+    backupCount: 3
+loggers:
+  app:
+    level: DEBUG
+    handlers: [ch,fh]
+    propagate: yes
