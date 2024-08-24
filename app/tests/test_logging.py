@@ -19,7 +19,14 @@ def test_log_output(caplog):
     def run_test_function():
         print('This is a test function')
 
+    @log
+    def return_function():
+        print('this is a return function')
+        return 'my index'
+
     run_test_function()
+    index = return_function()
 
     assert 'begin run_test_function' in caplog.text
     assert 'finished run_test_function' in caplog.text
+    assert index == 'my index'
