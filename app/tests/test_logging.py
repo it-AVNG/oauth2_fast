@@ -21,5 +21,5 @@ def test_log_output(caplog):
 
     run_test_function()
 
-    assert 'start run_test_function' in caplog.text
-    assert 'stop run_test_function' in caplog.text
+    assert 'begin run_test_function' in caplog.text
+    assert 'finished run_test_function' in caplog.text
