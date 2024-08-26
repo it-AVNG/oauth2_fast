@@ -154,3 +154,124 @@ This will help us inside of the function with all the completion and type checks
 
 We just need to add a path operation for the user/client to actually send the username and password.
 
+## Simple OAuth2 Flow with Password and Bearer
+Now let's build from the previous section and add the missing parts to have a complete security flow.
+
+
+### FakeDB - schemas
+It is a normal practice to have a database included in any Rest-ful Api. fastApi has a method to addressing any db type (SQL or NoSQL) and use it at dependencies for services. But for this study, a fake database for practicality. create a `fake_db.py` acting as database for our application.
+
+```python
+fake_users_db = {
+    "johndoe": {
+        "username": "johndoe",
+        "full_name": "John Doe",
+        "email": "johndoe@example.com",
+        "hashed_password": "fakehashedsecret",
+        "disabled": False,
+    },
+    "alice": {
+        "username": "alice",
+        "full_name": "Alice Wonderson",
+        "email": "alice@example.com",
+        "hashed_password": "fakehashedsecret2",
+        "disabled": True,
+    },
+}
+```
+
+In the `schemas.py`, we also add a specific Pydantic schema class for `UserInDB`. This is a subclassing from our previous `User` model.
+
+```python
+from pydantic import BaseModel
+
+class User(BaseModel):
+    ...
+
+class UserInDB(User):
+    hashed_password: str
+```
+
+### Get `username` & `password`
+
+We are going to use FastAPI security utilities to get the `username` and `password`.
+
+OAuth2 specifies that when using the "password flow" (that we are using) the client/user must send a `username` and `password` fields as form data.
+
+And the spec says that the fields have to be named like that. So `user-name` or `email` wouldn't work.
+
+or the login path operation, we need to use these names to be compatible with the spec (and be able to, for example, use the integrated API documentation system).
+
+The spec also states that the `username` and `password` must be sent as **form data** (so, no JSON here).
+
+#### `scope`
+The spec also says that the client can send another form field "`scope`".  it is actually a long string with "scopes" separated by spaces. Each "scope" is just a string (without spaces).
+
+They are normally used to declare specific security permissions, for example:
++ users:read or users:write are common examples.
++ instagram_basic is used by Facebook / Instagram.
++ https://www.googleapis.com/auth/drive is used by Google.
+
+Those details are implementation specific.
+Now let's use the utilities provided by FastAPI to handle this.
+
+#### `OAuth2PasswordRequestForm`
+
+First, import `OAuth2PasswordRequestForm`, and use it as a dependency with `Depends` in the path operation for `/token`:
+
+```python
+from fastapi import Depends, FastAPI,HTTPException,status
+from fastapi.security import OAuth2PasswordRequestForm
+from app.api.service import fake_hash_password
+
+@app.post("/token")
+async def login(form_data: Annotated[OAuth2PasswordRequestForm,Depends()]):
+    user_dict = fake_users_db.get(form_data.username)
+    if not user_dict:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Incorrect username or password")
+    user = UserInDB(**user_dict)
+    hashed_password = fake_hash_password(form_data.password)
+    if not hashed_password == user.hashed_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Incorrect username or password")
+
+    return {"access_token": user.username, "token_type": "bearer"}
+```
+
+Lets unpackt this in one by one. The endpoint "/token" is use to login. The data receive is of a `from_data`.
+To validate this `form_data` we use `OAuth2PasswordRequestForm`. It will be call to check, thus we use `Depends()`.
+
+>Link to learn more about [`Depends()`](https://fastapi.tiangolo.com/tutorial/dependencies/) and [`OAuth2PasswordRequestForm`](https://fastapi.tiangolo.com/reference/security/?h=oauth2passwordrequestform#oauth2-password-form) class.
+
+In the form_data, as mentioned above using we received a username. Lets check them via by call the python dictionary get method `fake_users_db.get(form_data.username)`. This will return the value of the key: `form_data.username`. and gracefully raise `HTTPexception` for if it returns exception.
+
+Then, all the key:value pairs we have in `user_dict`, lets unpackt them one by one by `**user_dict` and create an instance of `UserInDB` class, and store it in `user` variable. Pass the keys and values of the user_dict directly as key-value arguments, equivalent to:
+
+```python
+UserInDB(
+    username = user_dict["username"],
+    email = user_dict["email"],
+    full_name = user_dict["full_name"],
+    disabled = user_dict["disabled"],
+    hashed_password = user_dict["hashed_password"],
+)
+```
+
+Then finally, call hashing for the recieved password. check that with the created `user` instance password.
+
+```python
+hashed_password = fake_hash_password(form_data.password)
+if not hashed_password == user.hashed_password :
+    raise HTTPException(...)
+```
+
+This `fake_hash_password()` service method can be anything, but for simplicity in our `service.py` we written them as:
+
+```python
+def fake_hash_password(password: str):
+    '''fake hasshing'''
+    return "fakehashed" + password
+```
+
+Any returns of RestApi is always in JSON format. In a wonderful real world, this will return a `token`, we will see that in a next section with handling JWT.
