@@ -1,4 +1,3 @@
-from os import stat
 from app.api.schemas import User,UserInDB
 from fastapi import Depends,HTTPException,status
 from fastapi.security import OAuth2PasswordBearer
@@ -28,7 +27,6 @@ def fake_decode_token(token):
     user = get_user(fake_users_db, token)
     return user
 
-@log
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     '''getuser via decode token'''
 
@@ -50,7 +48,6 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         func_logger.exception(e)
         return e
 
-@log
 async def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
